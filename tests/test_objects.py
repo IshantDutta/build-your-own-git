@@ -97,3 +97,77 @@ def test_git_object_rejects_string():
 
     with pytest.raises(TypeError):
         git_object_hash("Hello")
+
+
+import os
+
+from mini_git.objects import store_blob, read_blob
+
+
+def test_store_and_read_blob(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    data = b"Hello World"
+
+    object_hash = store_blob(data)
+
+    retrieved_data = read_blob(object_hash)
+
+    assert retrieved_data == data
+
+
+def test_store_empty_blob(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    object_hash = store_blob(b"")
+
+    assert read_blob(object_hash) == b""
+
+
+def test_store_binary_blob(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    data = bytes([0, 1, 2, 3, 255])
+
+    object_hash = store_blob(data)
+
+    assert read_blob(object_hash) == data
+
+
+def test_identical_blobs_share_object(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    data = b"Hello World"
+
+    hash_a = store_blob(data)
+    hash_b = store_blob(data)
+
+    assert hash_a == hash_b
+
+    object_path = os.path.join(
+        ".mygit", "objects", hash_a[:2], hash_a[2:]
+    )
+
+    assert os.path.isfile(object_path)
+
+
+def test_missing_blob(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    with pytest.raises(FileNotFoundError):
+        read_blob("a" * 40)
