@@ -1,7 +1,10 @@
-
+import os
 import pytest
 
 from mini_git.objects import sha1_hash
+from mini_git.objects import git_object_hash
+from mini_git.objects import store_blob, read_blob
+from mini_git.objects import store_file
 
 
 def test_sha1_known_value():
@@ -49,7 +52,6 @@ def test_invalid_input():
         sha1_hash("Hello")
 
 
-from mini_git.objects import git_object_hash
 
 
 def test_empty_blob_hash():
@@ -99,9 +101,6 @@ def test_git_object_rejects_string():
         git_object_hash("Hello")
 
 
-import os
-
-from mini_git.objects import store_blob, read_blob
 
 
 def test_store_and_read_blob(tmp_path, monkeypatch):
@@ -171,3 +170,41 @@ def test_missing_blob(tmp_path, monkeypatch):
 
     with pytest.raises(FileNotFoundError):
         read_blob("a" * 40)
+
+
+
+
+def test_store_text_file(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    file_path = tmp_path / "hello.txt"
+    file_path.write_bytes(b"Hello World")
+
+    object_hash = store_file(str(file_path))
+
+    assert read_blob(object_hash) == b"Hello World"
+
+
+def test_store_binary_file(tmp_path, monkeypatch):
+
+    monkeypatch.chdir(tmp_path)
+
+    os.makedirs(".mygit/objects")
+
+    binary_data = bytes([0, 1, 2, 3, 255])
+
+    file_path = tmp_path / "image.bin"
+    file_path.write_bytes(binary_data)
+
+    object_hash = store_file(str(file_path))
+
+    assert read_blob(object_hash) == binary_data
+
+
+def test_store_missing_file():
+
+    with pytest.raises(FileNotFoundError):
+        store_file("nonexistent_file.txt")
