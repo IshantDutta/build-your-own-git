@@ -47,3 +47,53 @@ def test_invalid_input():
 
     with pytest.raises(TypeError):
         sha1_hash("Hello")
+
+
+from mini_git.objects import git_object_hash
+
+
+def test_empty_blob_hash():
+
+    result = git_object_hash(b"")
+
+    # Known Git SHA-1 hash of an empty blob
+    assert result == "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+
+
+def test_git_object_hash_format():
+
+    result = git_object_hash(b"Hello")
+
+    assert len(result) == 40
+
+
+def test_git_hash_differs_from_raw_hash():
+
+    data = b"Hello"
+
+    raw_hash = sha1_hash(data)
+    object_hash = git_object_hash(data)
+
+    assert raw_hash != object_hash
+
+
+def test_different_object_types_produce_different_hashes():
+
+    data = b"Hello"
+
+    blob_hash = git_object_hash(data, "blob")
+    tree_hash = git_object_hash(data, "tree")
+
+    assert blob_hash != tree_hash
+
+
+def test_invalid_object_type():
+
+    with pytest.raises(ValueError):
+        git_object_hash(b"Hello", "invalid")
+
+
+def test_git_object_rejects_string():
+
+    with pytest.raises(TypeError):
+        git_object_hash("Hello")
