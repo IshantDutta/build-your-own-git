@@ -163,3 +163,24 @@ def read_blob(object_hash: str) -> bytes:
         raise ValueError("Blob hash verification failed")
 
     return content
+
+
+def store_file(file_path: str) -> str:
+    """
+    Read a file and store its contents as a Git blob.
+
+    Args:
+        file_path: Path to the file.
+
+    Returns:
+        SHA-1 object ID.
+    """
+
+    # Open the file in binary read mode
+    with open(file_path, "rb") as file:
+        data = file.read()
+
+    # Store the file contents as a blob
+    object_hash = store_blob(data)
+
+    return object_hash
